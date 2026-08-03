@@ -1,59 +1,67 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, status
+from sqlalchemy.orm import Session
 from typing import List
-from models import Tarea, TareaCreate, TareaUpdate
 
-app = FastAPI(
-    title="API de Gestión de Tareas Pro",
-    description="Backend profesional con FastAPI para arrancar el GitHub a todo ojete.",
-    version="1.0.0"
-)
+import models
+from database import engine, get_db
 
-# "Base de datos" temporal en memoria
-db_tareas: List[Tarea] = []
-contador_id = 1
+# Creamos las tablas en la base de datos automáticamente al iniciar
+models.Base.metadata.create_all(bind=engine)
 
-@app.get("/", tags=["General"])
-def inicio():
-    return {"mensaje": "Backend activo y funcionando a pleno 🚀"}
+app = FastAPI(title="API de Tareas con Base de Datos")
 
-# GET: Obtener todas las tareas
-@app.get("/tareas", response_model=List[Tarea], tags=["Tareas"])
-def obtener_tareas():
-    return db_tareas
-
-# POST: Crear una nueva tarea
-@app.post("/tareas", response_model=Tarea, status_code=201, tags=["Tareas"])
-def crear_tarea(tarea_in: TareaCreate):
-    global contador_id
-    nueva_tarea = Tarea(
-        id=contador_id,
-        titulo=tarea_in.titulo,
-        descripcion=tarea_in.descripcion,
-        completada=tarea_in.completada
+# 1. CREAR TAREA (POST)
+@app.post("/tareas", response_model=models.Tarea, status_code=status.HTTP_201_CREATED)
+def crear_tarea(tarea: models.TareaCreate, db: Session = Depends(get_db)):
+    # Creamos una instancia del modelo de base de datos con los datos que llegan
+    nueva_tarea = models.TareaDB(
+        titulo=tarea.titulo,
+        descripcion=tarea.descripcion,
+        completada=tarea.completada
     )
-    db_tareas.append(nueva_tarea)
-    contador_id += 1
+    db.add(nueva_tarea)
+    db.commit()
+    db.refresh(nueva_tarea) # Actualiza la variable para obtener el ID generado por la DB
     return nueva_tarea
 
-# PUT: Actualizar una tarea existente por ID
-@app.put("/tareas/{tarea_id}", response_model=Tarea, tags=["Tareas"])
-def actualizar_tarea(tarea_id: int, tarea_in: TareaUpdate):
-    for index, tarea in enumerate(db_tareas):
-        if tarea.id == tarea_id:
-            # Actualizamos solo los campos que nos mandaron
-            datos_actualizados = tarea.dict(exclude_unset=True)
-            tarea_data = tarea.copy(update=datos_actualizados)
-            db_tareas[index] = tarea_data
-            return tarea_data
-            
-    raise HTTPException(status_code=404, detail="Tarea no encontrada")
+# 2. OBTENER TODAS LAS TAREAS (GET)
+@app.get("/tareas", response_model=List[models.Tarea])
+def obtener_tareas(db: Session = Depends(get_db)):
+    tareas = db.query(models.TareaDB).all()
+    return tareas
 
-# DELETE: Borrar una tarea
-@app.delete("/tareas/{tarea_id}", tags=["Tareas"])
-def eliminar_tarea(tarea_id: int):
-    for index, tarea in enumerate(db_tareas):
-        if tarea.id == index + 1 or tarea.id == tarea_id: # Ajuste simple de índice
-            db_tareas.pop(index)
-            return {"mensaje": f"Tarea {tarea_id} eliminada con éxito"}
-            
-    raise HTTPException(status_code=404, detail="Tarea no encontrada")
+# 3. OBTENER UNA TAREA POR ID (GET)
+@app.get("/tareas/{id}", response_model=models.Tarea)
+def obtener_tarea(id: int, db: Session = Depends(get_db)):
+    tarea = db.query(models.TareaDB).filter(models.TareaDB.id == id).first()
+    if not tarea:
+        raise HTTPException(status_code=404, detail="Tarea no encontrada")
+    return tarea
+
+# 4. ACTUALIZAR TAREA (PUT)
+@app.put("/tareas/{id}", response_model=models.Tarea)
+def actualizar_tarea(id: int, tarea_actualizada: models.TareaUpdate, db: Session = Depends(get_db)):
+    tarea_query = db.query(models.TareaDB).filter(models.TareaDB.id == id)
+    tarea_db = tarea_query.first()
+    
+    if not tarea_db:
+        raise HTTPException(status_code=404, detail="Tarea no encontrada")
+    
+    # Solo actualizamos los campos que el usuario envió (si no son None)
+    datos_actualizacion = tarea_actualizada.dict(exclude_unset=True)
+    tarea_query.update(datos_actualizacion, synchronize_session=False)
+    
+    db.commit()
+    return tarea_query.first()
+
+# 5. BORRAR TAREA (DELETE)
+@app.delete("/tareas/{id}", status_code=status.HTTP_204_NO_CONTENT)
+def borrar_tarea(id: int, db: Session = Depends(get_db)):
+    tarea = db.query(models.TareaDB).filter(models.TareaDB.id == id).first()
+    
+    if not tarea:
+        raise HTTPException(status_code=404, detail="Tarea no encontrada")
+    
+    db.delete(tarea)
+    db.commit()
+    return None
