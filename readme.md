@@ -1,28 +1,27 @@
-# 🚀 API REST de Tareas con FastAPI y SQLAlchemy
+# 🚀 API REST de Gestión de Tareas con FastAPI y SQLAlchemy
 
-API backend moderna y liviana desarrollada con **FastAPI** y **SQLAlchemy**, diseñada para gestionar tareas con persistencia en una base de datos relacional (SQLite), manejo robusto de excepciones y un CRUD completo.
+API desarrollada en **FastAPI** para la gestión de tareas, utilizando **SQLite** como base de datos, **SQLAlchemy** como ORM y una suite completa de pruebas automatizadas con **Pytest**.
 
-## 🛠️ Tecnologías utilizadas
-* **Python 3.10+**
-* **FastAPI** (Framework web asíncrono)
-* **SQLAlchemy** (ORM para la gestión de base de datos)
-* **Pydantic v2** (Validación de datos y esquemas de actualización)
-* **Uvicorn** (Servidor ASGI)
-* **SQLite** (Base de datos local)
+---
 
-## 📌 Endpoints de la API (CRUD Completo)
-* `GET /tareas` - Lista todas las tareas registradas.
-* `POST /tareas` - Crea una nueva tarea (Código `201 Created`).
-* `GET /tareas/{id}` - Obtiene el detalle de una tarea específica (Con manejo de error `404 Not Found`).
-* `PUT /tareas/{id}` - Actualiza parcial o totalmente una tarea existente.
-* `DELETE /tareas/{id}` - Elimina una tarea por su ID (Código `204 No Content`).
+## 🛠️ Tecnologías Utilizadas
 
-## 📁 Estructura del Proyecto
+* **FastAPI**: Framework web moderno y de alto rendimiento para construir APIs.
+* **SQLAlchemy**: ORM (Object-Relational Mapping) para la gestión de bases de datos relacionales.
+* **Pydantic V2**: Validación de datos y esquemas tipados.
+* **Pytest**: Framework para pruebas unitarias e integración.
+* **SQLite**: Base de datos ligera (en disco para producción y en memoria para tests).
+
+---
+
+## 📂 Estructura del Proyecto
+
 ```text
 backend-proyectos/
 │
-├── main.py          # Endpoints de la API, lógica de rutas y excepciones HTTP
-├── models.py        # Esquemas Pydantic y Modelos ORM de SQLAlchemy
-├── database.py      # Configuración de la conexión a la base de datos
-├── requirements.txt # Dependencias del proyecto
-└── README.md        # Documentación del proyecto
+├── database.py       # Configuración de la conexión a la base de datos
+├── models.py         # Modelos de SQLAlchemy (Tablas)
+├── main.py           # Endpoints de la API y esquemas Pydantic
+├── test_main.py      # Suite de pruebas automatizadas
+├── requirements.txt  # Dependencias del proyecto
+└── venv/             # Entorno virtual

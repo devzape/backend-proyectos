@@ -1,24 +1,37 @@
-from pydantic import BaseModel
+from sqlalchemy import Column, Integer, String, Boolean
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
+from database import Base
 
-# Lo que ya tenías para crear
+# ==========================================
+# MODELO ORM (SQLAlchemy - Tabla en BD)
+# ==========================================
+class TareaDB(Base):
+    __tablename__ = "tareas"
+
+    id = Column(Integer, primary_key=True, index=True)
+    titulo = Column(String, index=True)
+    descripcion = Column(String, nullable=True)
+    completada = Column(Boolean, default=False)
+
+
+# ==========================================
+# ESQUEMAS PYDANTIC (Validación de API)
+# ==========================================
 class TareaCreate(BaseModel):
     titulo: str
     descripcion: Optional[str] = None
     completada: bool = False
 
-# NUEVO: Esquema para actualizar (permite modificar solo lo que haga falta)
 class TareaUpdate(BaseModel):
     titulo: Optional[str] = None
     descripcion: Optional[str] = None
     completada: Optional[bool] = None
 
-# Lo que devuelve la API
 class TareaResponse(BaseModel):
     id: int
     titulo: str
     descripcion: Optional[str] = None
     completada: bool
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
