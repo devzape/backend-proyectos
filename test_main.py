@@ -30,7 +30,6 @@ app.dependency_overrides[get_db] = override_get_db
 
 client = TestClient(app)
 
-# FIXTURE: Limpia la base de datos antes de cada test para que sean independientes
 @pytest.fixture(autouse=True)
 def limpiar_bd():
     db = TestingSessionLocal()
@@ -38,12 +37,10 @@ def limpiar_bd():
     db.commit()
     db.close()
 
-
 def test_obtener_tareas_vacia():
     response = client.get("/tareas")
     assert response.status_code == 200
     assert response.json() == []
-
 
 def test_crear_tarea():
     response = client.post(
@@ -59,12 +56,10 @@ def test_crear_tarea():
     assert data["titulo"] == "Testear la API con pytest"
     assert "id" in data
 
-
 def test_obtener_tarea_no_existente():
     response = client.get("/tareas/99999")
     assert response.status_code == 404
     assert response.json()["detail"] == "La tarea con el ID 99999 no existe."
-
 
 def test_actualizar_tarea():
     response_crear = client.post(
@@ -82,7 +77,6 @@ def test_actualizar_tarea():
     assert data["titulo"] == "Tarea actualizada"
     assert data["completada"] is True
 
-
 def test_eliminar_tarea():
     response_crear = client.post(
         "/tareas",
@@ -95,7 +89,6 @@ def test_eliminar_tarea():
 
     response_get = client.get(f"/tareas/{tarea_id}")
     assert response_get.status_code == 404
-
 
 def test_filtrar_tareas():
     client.post("/tareas", json={"titulo": "Pendiente 1", "completada": False})

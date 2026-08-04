@@ -24,7 +24,6 @@ def get_db():
     finally:
         db.close()
 
-# NUEVO: Endpoint de listar tareas con filtros y paginación
 @app.get("/tareas", response_model=list[TareaResponse])
 def obtener_tareas(
     completada: bool | None = None,
@@ -34,7 +33,6 @@ def obtener_tareas(
 ):
     query = db.query(models.TareaDB)
     
-    # Si pasan el parámetro 'completada', filtramos
     if completada is not None:
         query = query.filter(models.TareaDB.completada == completada)
         
